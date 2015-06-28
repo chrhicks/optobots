@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+.sbtserver
+project/
+target/
+src/main/resources/images/
