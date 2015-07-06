@@ -27,19 +27,16 @@ class ProfileManager extends Actor with ActorLogging {
     case iwu:InitializeWithUser => user = Some(iwu.user)
 
     case Tick => {
-//      log.info(s"Managing the profile...")
       val imgs = getImages()
       val portfolioOpt: Option[Portfolio] = getPortfolio
       val unusedImages: Seq[Image] = portfolioOpt.map(p => PortfolioUtil.imagesNotInPortfolio(imgs, p)).getOrElse(Seq.empty)
-//      log.info(s"I own ${imgs.size} images, ${unusedImages.size} of which are not in a portfolio")
 
       portfolioOpt match {
         case Some(portfolio) =>
           if (portfolio.portfolioGroups.isEmpty) {
-            log.info("No portfolio groups! Generating some..")
             addNewPortfolioGroups(portfolio)
           } else {
-            if (unusedImages.size > 0) {
+            if (unusedImages.nonEmpty) {
               addImagesToGroups(unusedImages, portfolio)
             }
           }
@@ -63,7 +60,6 @@ class ProfileManager extends Actor with ActorLogging {
         ),
         Duration("5000 ms")
       )
-      log.info(s"Added Image [${img.guid}}] to group [${randomGroup.name}}]")
     }
   }
 
@@ -104,7 +100,6 @@ class ProfileManager extends Actor with ActorLogging {
   }
 
   def createPortfolio(userGuid: UUID): Portfolio = {
-    log.info(s"Creating Portfolio for $userGuid!")
     Await.result(portfolios.Portfolios.post(NewPortfolioForm(userGuid)), Duration("5000 ms"))
   }
 }

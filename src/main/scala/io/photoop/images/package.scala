@@ -21,6 +21,11 @@ case class ImageForm(
                       data: String
                       )
 
+case class ImageLikeForm(
+                  guid: _root_.java.util.UUID,
+                  userGuid: _root_.java.util.UUID
+                  )
+
 }
 
 package io.photoop.images.v0.models {
@@ -94,6 +99,20 @@ package object json {
         (__ \ "data").write[String]
       )(unlift(ImageForm.unapply _))
   }
+
+  implicit def jsonReadsImagesImageLikeForm: play.api.libs.json.Reads[ImageLikeForm] = {
+    (
+      (__ \ "guid").read[_root_.java.util.UUID] and
+        (__ \ "user_guid").read[_root_.java.util.UUID]
+      )(ImageLikeForm.apply _)
+  }
+
+  implicit def jsonWritesImagesImageLikeForm: play.api.libs.json.Writes[ImageLikeForm] = {
+    (
+      (__ \ "guid").write[_root_.java.util.UUID] and
+        (__ \ "user_guid").write[_root_.java.util.UUID]
+      )(unlift(ImageLikeForm.unapply _))
+  }
 }
 }
 
@@ -166,6 +185,20 @@ class Client(
         case r => throw new io.photoop.images.v0.errors.FailedRequest(r.getStatusCode, s"Unsupported response code[${r.getStatusCode}]. Expected: 200, 409", requestUri = Some(r.getUri))
       }
     }
+
+    override def postLike(
+                  imageLikeForm: io.photoop.images.v0.models.ImageLikeForm
+                  )(implicit ec: scala.concurrent.ExecutionContext): scala.concurrent.Future[Boolean] = {
+      val payload = play.api.libs.json.Json.toJson(imageLikeForm)
+
+      _executeRequest("POST", s"/images/like", body = Some(payload)).map {
+        case r if r.getStatusCode == 200 => _root_.io.photoop.images.v0.Client.parseJson("Boolean", r, _.validate[Boolean])
+        case r if r.getStatusCode == 409 => throw new io.photoop.images.v0.errors.ErrorsResponse(r)
+        case r => throw new io.photoop.images.v0.errors.FailedRequest(r.getStatusCode, s"Unsupported response code[${r.getStatusCode}]. Expected: 200, 409", requestUri = Some(r.getUri))
+      }
+    }
+
+
   }
 
   def _logRequest(request: Request) {
@@ -284,6 +317,10 @@ trait Images {
                                userGuid: _root_.java.util.UUID,
                                guid: _root_.java.util.UUID
                                )(implicit ec: scala.concurrent.ExecutionContext): scala.concurrent.Future[io.photoop.images.v0.models.Image]
+
+  def postLike(
+                imageLikeForm: io.photoop.images.v0.models.ImageLikeForm
+                )(implicit ec: scala.concurrent.ExecutionContext): scala.concurrent.Future[Boolean]
 }
 
 package errors {

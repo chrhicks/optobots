@@ -12,8 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.Random
 
-
-
 class ImageUploader extends Actor with ActorLogging {
   import ImageUploader._
 
@@ -24,7 +22,7 @@ class ImageUploader extends Actor with ActorLogging {
       val imageIndex = Random.nextInt(imageFiles.length)
       val filePath = imageFiles(imageIndex)
       val uploadedImage = uploadImage(filePath.getAbsolutePath, img.user)
-      log.info(s"Uploaded new image! - ${uploadedImage.objectId}")
+      sender() ! ImageUploaded(img.user, uploadedImage)
   }
 
   def uploadImage(imagePath: String, user: User): Image = {
@@ -41,4 +39,6 @@ object ImageUploader {
   private val images = new io.photoop.images.v0.Client("http://localhost:7000")
 
   case class ImageToUpload(user: User)
+
+  case class ImageUploaded(user: User, image: Image)
 }
